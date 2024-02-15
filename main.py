@@ -6,17 +6,23 @@ import sys
 import matplotlib.pyplot as plt
 
 
+imin = 'maze2.jpg'
+imout = 'result4.jpg'
+init = [20,530]
+end = [1050,580]
+COLORING_WIDTH =25
+
+
 THRESHOLD = 200
+COLOR_THRESHOLD = 170
 RED = [180,0,0]
-init = [[63,541,3]]
-end = [63,1500]
-steps = [init]
+
 
 def test_int(point):
     point = im[point[0],point[1]]
     if any(i>=THRESHOLD for i in point):
         return 1
-    else :
+    else:
         return 0
     
 def move_dir(point,dir):
@@ -36,18 +42,37 @@ def move_dir(point,dir):
     return [x,y]
 
 def find_next(current):
-    dirs = []
+    nexts = []
     for i in range(1,5):
         next = move_dir(current,i)
         if(test_int(next)):
-            dirs.extend([i])
-    return dirs
+            nexts.append(next)
+            im[next[0],next[1]] = RED
+    return nexts
+
+def color_path(chain):
+    global THRESHOLD
+    THRESHOLD = COLOR_THRESHOLD
+    for pos in chain:
+        for i in range(1,5):
+            border = False
+            current = pos.copy()
+            k = 0
+            while((not border) and k<COLORING_WIDTH):
+                im[current[0],current[1]] = RED
+                next = move_dir(current,i)
+                if(test_int(next)):
+                    current = next
+                    k = k+1
+                else:
+                    border = True
+
+
 
     
-im = ski.io.imread('maze.jpg')
+im = ski.io.imread(imin)
 im_or = im.copy()
-#ski.io.imshow(im)
-#ski.io.show()
+steps = [[init]]
 last = steps[0][-1]
 im[last[0],last[1]] = RED
 
@@ -55,60 +80,65 @@ found = 0
 n = 0
 while(not found):
     
-    #We take the last steps of the first chain
-    last = steps[0][-1]
-    #We move to the new one and paint it
-    current = move_dir(last,last[2])
-    im[current[0],current[1]] = RED
-    #We are on the target point
-    if(current == end):
-        found = 1
-        print("found !")
-        chain = steps[0]
-        for i in range(0,len(chain)):
-            im_or[chain[i][0],chain[i][1]] = RED
-        ski.io.imshow(im_or)
-        ski.io.show()
-
-    #We are not on the target point
-    else:
-        n=n+1
-        if(n%10000 == 1):
-            print(n)
-            print(len(steps))
-            print(current)
-        #if(n%50000 == 1):
-            #plt.imshow(im)
-            #plt.ion()
-            #plt.show()
-            #plt.pause(1)
-        #We find points around that are white, these are the new directions
-        dirs = find_next(current)
-        #print(dirs)
-        #No new point, it's a dead end
-        if(len(dirs)==0):
-            #We remove this chain, next time we'll try the next one
-            del steps[0]
-        #Only one new point, we add the new step    
-        if(len(dirs)==1):
-            steps[0].append([current[0],current[1],dirs[0]])
+        for i in range(len(steps)-1,-1,-1):
+            #We take the last steps of the current chain
             
-        #More new directions, we add the new step and create extra chains.
-        if(len(dirs)==2):
-            new_1 = steps[0].copy()
-            steps[0].append([current[0],current[1],dirs[0]]) 
-            new_1.append([current[0],current[1],dirs[1]])
-            steps.append(new_1)
+            current = steps[i][-1]
+            #We are on the target point
+            if(current == end):
+                found = 1
+                print("found !")
+                chain = steps[i]
+                print(len(chain))
+                im = im_or.copy()
+                color_path(chain)
+                
+                ski.io.imsave(imout,im)
+                plt.imshow(im_or)
+                plt.show()
+                break
 
-        if(len(dirs)==3):
-            new_1 = steps[0].copy()
-            new_2 = steps[0].copy() 
-            steps[0].append([current[0],current[1],dirs[0]]) 
-            new_1.append([current[0],current[1],dirs[1]])
-            steps.append(new_1)
-            new_2.append([current[0],current[1],dirs[2]])
-            steps.append(new_2)
-        #print(steps)
+            #We are not on the target point
+            else:
+                n=n+1
+                if(n%10000 == 1):
+                    print(n)
+                    print(len(steps))
+                    print(current)
+                if(n%100000 == 1):
+                    plt.imshow(im)
+                    plt.ion()
+                    plt.show()
+                    plt.pause(0.1)
+                #We find points around that are white, these are the new directions
+                nexts = find_next(current)
+                #No new point, it's a dead end
+                if(len(nexts)==0):
+                    #We remove this chain, next time we'll try the next one
+                    del steps[i]
+                
+                #Only one new point, we add the new step    
+                if(len(nexts)==1):
+                    steps[i].append(nexts[0])
+                    
+                #More new directions, we add the new step and create extra chains.
+                if(len(nexts)==2):
+                    new_1 = steps[i].copy()
+                    steps[i].append(nexts[0]) 
+                    new_1.append(nexts[1])
+                    steps.append(new_1)
+
+                if(len(nexts)>2):
+                    new_1 = steps[i].copy()
+                    new_2 = steps[i].copy() 
+                    steps[i].append(nexts[0]) 
+                    new_1.append(nexts[1])
+                    steps.append(new_1)
+                    new_2.append(nexts[2])
+                    steps.append(new_2)
+        
+       
+       
         
         
 
