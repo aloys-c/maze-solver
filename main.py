@@ -4,13 +4,13 @@ import skimage as ski
 import matplotlib.pyplot as plt
 
 
-imin = 'maze.jpg'
-imout = 'result.jpg'
-init = [20,530]
-end = [1050,580]
-COLORING_WIDTH =6
+imin = 'maze6.jpg'
+imout = 'result6.jpg'
+init = [54,344] #y,x
+end = [214,217] 
+COLORING_WIDTH =3
 
-
+ITER_SHOW = 10000
 THRESHOLD = 200
 COLOR_THRESHOLD = 170
 RED = [180,0,0]
@@ -83,14 +83,16 @@ while(not found):
             #We are on the target point
             if(current == end):
                 found = 1
-                print("found !")
+                print("Found :")
                 chain = steps[i]
-                print(len(chain))
+                print("Iterations: "+str(n))
+                print("Chain length: "+str(len(chain))+"\n")
                 im = im_or.copy()
                 color_path(chain)
                 
                 ski.io.imsave(imout,im)
-                plt.imshow(im_or)
+                plt.ioff()
+                plt.imshow(im)
                 plt.show()
                 break
 
@@ -98,14 +100,13 @@ while(not found):
             else:
                 n=n+1
                 if(n%10000 == 1):
-                    print(n)
-                    print(len(steps))
-                    print(current)
-                if(n%100000 == 1):
+                    print("Iterations: "+str(n-1))
+                    print("Current chains: "+str(len(steps))+"\n")
+                if(n%ITER_SHOW == 1):
                     plt.imshow(im)
                     plt.ion()
                     plt.show()
-                    plt.pause(0.1)
+                    plt.pause(0.5)
                 #We find points around that are white, these are the new directions
                 nexts = find_next(current)
                 #No new point, it's a dead end
