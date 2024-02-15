@@ -1,16 +1,14 @@
 #main.py
-#import matplotlib.pyplot as plt
 
 import skimage as ski 
-import sys
 import matplotlib.pyplot as plt
 
 
-imin = 'maze2.jpg'
-imout = 'result4.jpg'
+imin = 'maze.jpg'
+imout = 'result.jpg'
 init = [20,530]
 end = [1050,580]
-COLORING_WIDTH =25
+COLORING_WIDTH =6
 
 
 THRESHOLD = 200
@@ -58,7 +56,7 @@ def color_path(chain):
             border = False
             current = pos.copy()
             k = 0
-            while((not border) and k<COLORING_WIDTH):
+            while((not border) and k<=COLORING_WIDTH):
                 im[current[0],current[1]] = RED
                 next = move_dir(current,i)
                 if(test_int(next)):
@@ -68,8 +66,6 @@ def color_path(chain):
                     border = True
 
 
-
-    
 im = ski.io.imread(imin)
 im_or = im.copy()
 steps = [[init]]
