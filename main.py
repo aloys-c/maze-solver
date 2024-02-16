@@ -2,15 +2,17 @@
 
 import skimage as ski 
 import matplotlib.pyplot as plt
+import time
+start_time = time.time()
 
 
 imin = './mazes/maze8.jpg'
 imout = './results/result8.jpg'
-init = [100,120] #y,x
-end = [[618,326]] 
+init = [60,545] #y,x
+end = [[60,1505]] 
 COLORING_WIDTH =2
 
-ITER_SHOW = 10000
+ITER_SHOW = 100000
 THRESHOLD = 200
 COLOR_THRESHOLD = 170
 RED = [180,0,0]
@@ -68,73 +70,108 @@ def color_path(chain):
 
 im = ski.io.imread(imin)
 im_or = im.copy()
-steps = [[init]]
-last = steps[0][-1]
-im[last[0],last[1]] = RED
+id_n = 0
+chains = {id_n:{"prev":-1,"next":0,"chain":[init]}}
 
 found = 0
 n = 0
+active_chains = [id_n]
+current = chains[id_n].get("chain")[-1]
+im[current[0],current[1]] = RED
+
+
 while(not found):
-    
-        for i in range(len(steps)-1,-1,-1):
-            #We take the last steps of the current chain
+
+    for i in range(len(active_chains)-1,-1,-1):
+
+        #We take the last chain of the active chains
+        id_i = active_chains[i]
+
+        current = chains[id_i].get("chain")[-1]
+        #We are on the target point, let's print the path
+        if(current in end):
+            print("--- %s seconds ---" % (time.time() - start_time))
+            found = 1
+            print("Found :")
+            prev_id = id_i
+            chain = []
+            while(not prev_id == -1):
+                chain = chains[prev_id].get('chain') + chain 
+                prev_id = chains[prev_id].get('prev')
             
-            current = steps[i][-1]
-            #We are on the target point
-            if(current in end):
-                found = 1
-                print("Found :")
-                chain = steps[i]
-                print("Iterations: "+str(n))
-                print("Chain length: "+str(len(chain))+"\n")
-                im = im_or.copy()
-                color_path(chain)
-                
-                ski.io.imsave(imout,im)
-                plt.ioff()
+            print("Iterations: "+str(n))
+            print("Chain length: "+str(len(chain))+"\n")
+            im = im_or.copy()
+            color_path(chain)
+            print("--- %s seconds ---" % (time.time() - start_time))
+            ski.io.imsave(imout,im)
+            plt.ioff()
+            plt.imshow(im)
+            plt.show()
+            
+            break
+
+        #We are not on the target point
+        else:
+            n=n+1
+            if(n%10000 == 1):
+                print("Iterations: "+str(n-1))
+                print("Current chains: "+str(len(chains))+"\n")
+                print("active chains: "+str(len(active_chains))+"\n")
+            if(n%ITER_SHOW == 1):
                 plt.imshow(im)
+                plt.ion()
                 plt.show()
-                break
+                plt.pause(0.5)
 
-            #We are not on the target point
-            else:
-                n=n+1
-                if(n%10000 == 1):
-                    print("Iterations: "+str(n-1))
-                    print("Current chains: "+str(len(steps))+"\n")
-                if(n%ITER_SHOW == 1):
-                    plt.imshow(im)
-                    plt.ion()
-                    plt.show()
-                    plt.pause(0.5)
-                #We find points around that are white, these are the new directions
-                nexts = find_next(current)
-                #No new point, it's a dead end
-                if(len(nexts)==0):
-                    #We remove this chain, next time we'll try the next one
-                    del steps[i]
-                
-                #Only one new point, we add the new step    
-                if(len(nexts)==1):
-                    steps[i].append(nexts[0])
+            #We find points around that are white, these are the new directions
+            nexts = find_next(current)
+            #No new point, it's a dead end
+            if(len(nexts)==0):
+                #We remove this chain, and also the parent unused ones
+                del active_chains[i]
+                prev_id = id_i
+                next = 0
+                while(not next):
+                    id_i = prev_id
+                    prev_id = chains[id_i].get('prev')
+                    del chains[id_i]
                     
-                #More new directions, we add the new step and create extra chains.
-                if(len(nexts)==2):
-                    new_1 = steps[i].copy()
-                    steps[i].append(nexts[0]) 
-                    new_1.append(nexts[1])
-                    steps.append(new_1)
+                    chains[prev_id]['next'] -=1
+                    next = chains[prev_id]['next']
+                           
 
-                if(len(nexts)>2):
-                    new_1 = steps[i].copy()
-                    new_2 = steps[i].copy() 
-                    steps[i].append(nexts[0]) 
-                    new_1.append(nexts[1])
-                    steps.append(new_1)
-                    new_2.append(nexts[2])
-                    steps.append(new_2)
-        
-       
+            #Only one new point, we add the new step    
+            if(len(nexts)==1):
+                chains[id_i]['chain'].append(nexts[0])
+                
+            #More new directions, we fork in new chains.
+            if(len(nexts)==2):
+
+                chains[id_i]["next"]+=2
+                id_n +=1 
+                chains[id_n] = {"prev":id_i,"next":0,"chain":[nexts[0]]} 
+                active_chains.append(id_n)
+                id_n +=1
+                chains[id_n] = {"prev":id_i,"next":0,"chain":[nexts[1]]} 
+                active_chains.append(id_n)
+                del active_chains[i]
+                
+            if(len(nexts)>2): #Not only 3 to take into account the first iteration
+
+                chains[id_i]["next"]+=3
+                id_n +=1 
+                chains[id_n] = {"prev":id_i,"next":0,"chain":[nexts[0]]} 
+                active_chains.append(id_n)
+                id_n +=1
+                chains[id_n] = {"prev":id_i,"next":0,"chain":[nexts[1]]} 
+                active_chains.append(id_n)
+                id_n +=1
+                chains[id_n] = {"prev":id_i,"next":0,"chain":[nexts[2]]} 
+                active_chains.append(id_n)
+                del active_chains[i]
+               
+
        
         
         
