@@ -4,11 +4,11 @@ import skimage as ski
 import matplotlib.pyplot as plt
 
 
-imin = 'maze6.jpg'
-imout = 'result6.jpg'
-init = [54,344] #y,x
-end = [214,217] 
-COLORING_WIDTH =3
+imin = './mazes/maze8.jpg'
+imout = './results/result8.jpg'
+init = [100,120] #y,x
+end = [[618,326]] 
+COLORING_WIDTH =2
 
 ITER_SHOW = 10000
 THRESHOLD = 200
@@ -81,7 +81,7 @@ while(not found):
             
             current = steps[i][-1]
             #We are on the target point
-            if(current == end):
+            if(current in end):
                 found = 1
                 print("Found :")
                 chain = steps[i]
